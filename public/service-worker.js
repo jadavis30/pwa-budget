@@ -26,10 +26,9 @@ self.addEventListener('install', function(evt) {
             return cache.addAll(FILES_TO_CACHE);
         })
     );
-    self.skipWaiting();
 });
 
- //Activate the service worker and remove old data from the cachegit
+ //Activate the service worker and remove old data from the cache
  self.addEventListener('activate', function(evt) {
     evt.waitUntil(
         caches.keys().then(keyList => {
@@ -40,37 +39,39 @@ self.addEventListener('install', function(evt) {
                         return caches.delete(key);
                     }    
                 })
-            );    
+            )    
         })
     );
-    
-    self.clients.claim();
 }); 
 
 //Intercept fetch requests
- self.addEventListener('fetch', function(evt) {
-    if(evt.request.url.includes('/api/transaction')) {
+self.addEventListener('fetch', function(evt) {
+    if (evt.request.url.includes('/api/')) {
+        console.log('fetch request: ' + evt.request.url)
+        if (evt.request.method === 'POST') {
+            return;
+        }
         evt.respondWith(
             caches
-                .open(DATA_CACHE_NAME)
-                .then(cache => {
-                    return fetch(evt.request)
-                        .then(response => {
-                            if(response.status ===200) {
-                                cache.put(evt.request.url, response.clone());
-                            }
-
-                            return response;
-                        })
-                        .catch(err => {
-                            return cache.match(evt.request);
-                        });
+            .open(DATA_CACHE_NAME)
+            .then(cache => {
+                return fetch(evt.request)
+                    .then(response => {
+                        if (response.status === 200) {
+                            console.log('Successful request, cloning data to cache');
+                            cache.put(evt.request.url, response.clone());
+                        }
+                        return response;    
+                    })
+                    .catch(err => {
+                        console.log('You are offline, data is being managed by the cache');
+                        return cache.match(evt.request);
+                    });
                 })
-                .catch(err => console.log(err))
+                .catch(err => {console.log(err)})        
         );
-
         return;
-    }
+    };
     evt.respondWith(
         fetch(evt.request).catch(function() {
             return caches.match(evt.request).then(function(response) {
