@@ -49,7 +49,7 @@ self.addEventListener('install', function(evt) {
 
 //Intercept fetch requests
  self.addEventListener('fetch', function(evt) {
-    if(evt.request.url.includes('/api/all')) {
+    if(evt.request.url.includes('/api/transaction')) {
         evt.respondWith(
             caches
                 .open(DATA_CACHE_NAME)
